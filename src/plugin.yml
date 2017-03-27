@@ -1,0 +1,9 @@
+name: WordpressBridge
+main: de.guntram.bukkit.WordpressBridge.WPBPlugin
+version: "0.1"
+commands:
+    webpassword:
+        description: Register yourself and set your password for the website
+        usage: /webpassword <password>
+        permission: webpassword.setown
+        permission-message: No access to the web site
