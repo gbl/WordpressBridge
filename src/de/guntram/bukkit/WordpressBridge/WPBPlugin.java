@@ -9,10 +9,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import static org.bukkit.craftbukkit.libs.org.apache.commons.codec.digest.DigestUtils.md5Hex;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -49,6 +49,9 @@ public class WPBPlugin extends JavaPlugin {
             logger.log(Level.SEVERE, "mysql driver not found", ex);
         } catch (SQLException ex) {
             logger.log(Level.SEVERE, "cannot establish connection", ex);
+            logger.log(Level.SEVERE, "this happened trying to connect to mysql "+
+                                    "on {0} port {1} using database name {2} username {3}", 
+                    new Object[]{host, port, database, user});
         }
     }
     
