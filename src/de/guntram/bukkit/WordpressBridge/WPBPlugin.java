@@ -21,7 +21,7 @@ public class WPBPlugin extends JavaPlugin {
     private FileConfiguration config;
     private Logger logger;
 
-    private String host, user, password, database, prefix, capabilities;
+    private String host, user, password, database, capabilities, prefix;
     private int port;
     
     private Connection mysql;
@@ -39,7 +39,18 @@ public class WPBPlugin extends JavaPlugin {
         database=config.getString("database", "wordpress");
         prefix=config.getString("prefix", "wp_");
         capabilities=config.getString("capabilities", "a:1:{s:15:\"bbp_participant\";b:1;}");
-        
+
+        reConnect();
+        if (mysql != null) {
+            try {
+                mysql.close();
+            } catch (SQLException ex) {
+            }
+            mysql=null;
+        }
+    }
+    
+    private void reConnect() {
         mysql=null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
@@ -61,10 +72,6 @@ public class WPBPlugin extends JavaPlugin {
             sender.sendMessage("This can only be done by players");
             return false;
         }
-        if (mysql==null) {
-            sender.sendMessage("There was a problem connecting to the database, you can't use that command now. Contact staff.");
-            return true;
-        }
         String commandName=cmd.getName();
         if (!(commandName.equals("webpassword")))
             return false;
@@ -72,12 +79,23 @@ public class WPBPlugin extends JavaPlugin {
             sender.sendMessage("You need to type your new password, which must not include spaces, behind /webpassword");
             return false;
         }
+
+        reConnect();
+        if (mysql==null) {
+            sender.sendMessage("There was a problem connecting to the database, you can't use that command now. Contact staff.");
+            return true;
+        }
         if (createUserOrSetPassword(sender.getName(), ((Player)sender).getUniqueId().toString(), args[0])) {
             sender.sendMessage("Your password was set");
         } else {
             sender.sendMessage("There was a problem, contact staff");
         }
-        return false;
+        try {
+            mysql.close();
+        } catch (SQLException ex) {
+        }
+        mysql=null;
+        return true;
     }
 
 
@@ -85,11 +103,11 @@ public class WPBPlugin extends JavaPlugin {
         Statement query;
         try {
             query=mysql.createStatement();
-            ResultSet result=query.executeQuery("select id from wp_users where user_login='"+name+"'");
+            ResultSet result=query.executeQuery("select id from "+prefix+"users where user_login='"+name+"'");
             if (result.next()) {
                 // user already exists
                 int id=result.getInt("id");
-                String q="select meta_value from wp_usermeta where user_id="+id+" and meta_key='minecraftuuid'";
+                String q="select meta_value from "+prefix+"usermeta where user_id="+id+" and meta_key='minecraftuuid'";
                 logger.log(Level.INFO, q);
                 ResultSet uuidres=query.executeQuery(q);
                 if (uuidres.next()) {
@@ -99,13 +117,13 @@ public class WPBPlugin extends JavaPlugin {
                         return false;
                     }
                 } else {
-                    query.executeQuery("insert into wp_usermeta (umeta_id, user_id, meta_key, meta_value)"+
+                    query.executeQuery("insert into "+prefix+"usermeta (umeta_id, user_id, meta_key, meta_value)"+
                             "values (null, "+id+", 'minecraftuuid', '"+uuid+"'");
                 }
-                query.execute("update wp_users set user_pass='"+md5Hex(password)+"' where id="+id);
+                query.execute("update "+prefix+"users set user_pass='"+md5Hex(password)+"' where id="+id);
                 return true;
             } else {
-                String q="insert into wp_users("+
+                String q="insert into "+prefix+"users("+
                                 "id, user_login, user_pass, user_nicename, user_email, user_url, user_registered, user_activation_key, user_status, display_name"+
                                 ") values ("+
                                 "null, '"+name+"', '"+md5Hex(password)+"', '"+name+"', 'unknown@email', '', now(), '', 0, '"+name+"')";
@@ -115,7 +133,7 @@ public class WPBPlugin extends JavaPlugin {
                 result.next();
                 int id=result.getInt(1);
                 PreparedStatement pstmt=mysql.prepareStatement(""+
-                        "insert into wp_usermeta (umeta_id, user_id, meta_key, meta_value)"+
+                        "insert into "+prefix+"usermeta (umeta_id, user_id, meta_key, meta_value)"+
                         "values (null, ?, ?, ?)"+
                 "");
                 pstmt.setInt(1, id); pstmt.setString(2, "minecraftuuid");       pstmt.setString(3, uuid);       pstmt.executeUpdate();
