@@ -5,3 +5,7 @@ password: yXA2ZAf5gwwH8j8i
 database: wordpress
 prefix: wp_
 capabilities: 'a:1:{s:15:"bbp_participant";b:1;}'
+
+phpbb_db:   phpbb3
+phpbb_user: phpbb3
+phpbb_pass: Idonotknow
